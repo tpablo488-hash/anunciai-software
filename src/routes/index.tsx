@@ -109,7 +109,7 @@ function Index() {
         <header className="border-b border-border/60 backdrop-blur sticky top-0 z-10 bg-background/70">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div>
-              <img src="/logo.png" alt="Anuncia.ai" className="h-9 w-auto object-contain" />
+              <img src="/logo.png" alt="Anuncia.ai" className="h-12 w-auto object-contain" />
             </div>
             {result && (
               <div className="text-right">
