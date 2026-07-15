@@ -136,10 +136,10 @@ function Index() {
             <TabsContent value="upload">
               <UploadPanel value={ad} onChange={setAd} onAnalyze={onAnalyze} loading={loading} />
             </TabsContent>
-            <TabsContent value="score">{result && <ScorePanel result={result} />}</TabsContent>
-            <TabsContent value="novo">{result && <NewAdPanel result={result} />}</TabsContent>
+            <TabsContent value="score">{result ? <ScorePanel result={result} /> : <EmptyState />}</TabsContent>
+            <TabsContent value="novo">{result ? <NewAdPanel result={result} /> : <EmptyState />}</TabsContent>
             <TabsContent value="imagens">
-              {result && <ImagesPanel originals={ad.images} prompt={result.promptImagem} />}
+              {result ? <ImagesPanel originals={ad.images} prompt={result.promptImagem} /> : <EmptyState />}
             </TabsContent>
           </Tabs>
         </div>
