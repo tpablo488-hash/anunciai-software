@@ -128,9 +128,9 @@ function Index() {
           <Tabs value={tab} onValueChange={setTab} className="space-y-6">
             <TabsList className="grid grid-cols-4 w-full max-w-2xl">
               <TabsTrigger value="upload">Upload</TabsTrigger>
-              <TabsTrigger value="score" disabled={!result}>Score</TabsTrigger>
-              <TabsTrigger value="novo" disabled={!result}>Novo Anúncio</TabsTrigger>
-              <TabsTrigger value="imagens" disabled={!result}>Imagens</TabsTrigger>
+              <TabsTrigger value="score">Score</TabsTrigger>
+              <TabsTrigger value="novo">Novo Anúncio</TabsTrigger>
+              <TabsTrigger value="imagens">Imagens</TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload">
