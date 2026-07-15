@@ -147,3 +147,11 @@ function Index() {
     </div>
   );
 }
+
+function EmptyState() {
+  return (
+    <div className="surface-card p-12 text-center text-muted-foreground">
+      <p className="text-sm">Faça a análise na aba <span className="text-foreground font-medium">Upload</span> para desbloquear este conteúdo.</p>
+    </div>
+  );
+}
