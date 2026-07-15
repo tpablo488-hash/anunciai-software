@@ -85,7 +85,7 @@ export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
         <Button
           size="lg"
           className="w-full font-semibold"
-          disabled={!canSubmit || loading}
+          disabled={loading}
           onClick={onAnalyze}
         >
           {loading ? "Analisando com IA..." : "Analisar anúncio"}
