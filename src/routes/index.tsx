@@ -85,13 +85,12 @@ function Index() {
         <nav className="space-y-1 text-sm">
           {[
             { id: "upload", label: "Upload", icon: Upload },
-            { id: "score", label: "Score", icon: Gauge, disabled: !result },
-            { id: "novo", label: "Novo Anúncio", icon: FileText, disabled: !result },
-            { id: "imagens", label: "Imagens", icon: ImageIcon, disabled: !result },
+            { id: "score", label: "Score", icon: Gauge },
+            { id: "novo", label: "Novo Anúncio", icon: FileText },
+            { id: "imagens", label: "Imagens", icon: ImageIcon },
           ].map((n) => (
             <button
               key={n.id}
-              disabled={n.disabled}
               onClick={() => setTab(n.id)}
               className={`w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${
                 tab === n.id ? "bg-sidebar-accent text-foreground" : "text-muted-foreground hover:bg-sidebar-accent/60"
