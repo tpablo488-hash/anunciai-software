@@ -41,6 +41,11 @@ function Index() {
   const analyze = useServerFn(analyzeAd);
 
   async function onAnalyze() {
+    if (!ad.product.trim() || !ad.category.trim() || !ad.marketplace) {
+      toast.error("Preencha produto, categoria e marketplace antes de analisar.");
+      return;
+    }
+
     setLoading(true);
     try {
       const r = await analyze({
@@ -80,13 +85,12 @@ function Index() {
         <nav className="space-y-1 text-sm">
           {[
             { id: "upload", label: "Upload", icon: Upload },
-            { id: "score", label: "Score", icon: Gauge, disabled: !result },
-            { id: "novo", label: "Novo Anúncio", icon: FileText, disabled: !result },
-            { id: "imagens", label: "Imagens", icon: ImageIcon, disabled: !result },
+            { id: "score", label: "Score", icon: Gauge },
+            { id: "novo", label: "Novo Anúncio", icon: FileText },
+            { id: "imagens", label: "Imagens", icon: ImageIcon },
           ].map((n) => (
             <button
               key={n.id}
-              disabled={n.disabled}
               onClick={() => setTab(n.id)}
               className={`w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors ${
                 tab === n.id ? "bg-sidebar-accent text-foreground" : "text-muted-foreground hover:bg-sidebar-accent/60"
@@ -124,22 +128,30 @@ function Index() {
           <Tabs value={tab} onValueChange={setTab} className="space-y-6">
             <TabsList className="grid grid-cols-4 w-full max-w-2xl">
               <TabsTrigger value="upload">Upload</TabsTrigger>
-              <TabsTrigger value="score" disabled={!result}>Score</TabsTrigger>
-              <TabsTrigger value="novo" disabled={!result}>Novo Anúncio</TabsTrigger>
-              <TabsTrigger value="imagens" disabled={!result}>Imagens</TabsTrigger>
+              <TabsTrigger value="score">Score</TabsTrigger>
+              <TabsTrigger value="novo">Novo Anúncio</TabsTrigger>
+              <TabsTrigger value="imagens">Imagens</TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload">
               <UploadPanel value={ad} onChange={setAd} onAnalyze={onAnalyze} loading={loading} />
             </TabsContent>
-            <TabsContent value="score">{result && <ScorePanel result={result} />}</TabsContent>
-            <TabsContent value="novo">{result && <NewAdPanel result={result} />}</TabsContent>
+            <TabsContent value="score">{result ? <ScorePanel result={result} /> : <EmptyState />}</TabsContent>
+            <TabsContent value="novo">{result ? <NewAdPanel result={result} /> : <EmptyState />}</TabsContent>
             <TabsContent value="imagens">
-              {result && <ImagesPanel originals={ad.images} prompt={result.promptImagem} />}
+              {result ? <ImagesPanel originals={ad.images} prompt={result.promptImagem} /> : <EmptyState />}
             </TabsContent>
           </Tabs>
         </div>
       </main>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="surface-card p-12 text-center text-muted-foreground">
+      <p className="text-sm">Faça a análise na aba <span className="text-foreground font-medium">Upload</span> para desbloquear este conteúdo.</p>
     </div>
   );
 }

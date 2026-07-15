@@ -48,8 +48,6 @@ export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
     [value, onChange],
   );
 
-  const canSubmit = value.product.trim() && value.category.trim() && value.marketplace;
-
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
       <div className="space-y-4">
@@ -87,7 +85,7 @@ export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
         <Button
           size="lg"
           className="w-full font-semibold"
-          disabled={!canSubmit || loading}
+          disabled={loading}
           onClick={onAnalyze}
         >
           {loading ? "Analisando com IA..." : "Analisar anúncio"}
