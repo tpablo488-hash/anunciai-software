@@ -41,6 +41,11 @@ function Index() {
   const analyze = useServerFn(analyzeAd);
 
   async function onAnalyze() {
+    if (!ad.product.trim() || !ad.category.trim() || !ad.marketplace) {
+      toast.error("Preencha produto, categoria e marketplace antes de analisar.");
+      return;
+    }
+
     setLoading(true);
     try {
       const r = await analyze({
