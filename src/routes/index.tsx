@@ -109,10 +109,7 @@ function Index() {
         <header className="border-b border-border/60 backdrop-blur sticky top-0 z-10 bg-background/70">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold tracking-tight">Otimizador de anúncios</h1>
-              <p className="text-xs text-muted-foreground">
-                Transforme um anúncio simples em um anúncio profissional pronto para o marketplace.
-              </p>
+              <img src="/logo.png" alt="Anuncia.ai" className="h-9 w-auto object-contain" />
             </div>
             {result && (
               <div className="text-right">
