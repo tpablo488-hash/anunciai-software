@@ -77,19 +77,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Anuncia.ai — Otimize anúncios com IA" },
+      { title: "Anuncia.ai — Otimize anúncios de marketplaces com IA" },
       {
         name: "description",
         content:
-          "Ferramenta interna para transformar anúncios comuns em anúncios profissionais para Mercado Livre, Shopee, Amazon e OLX.",
+          "Transforme anúncios comuns em anúncios profissionais para Mercado Livre, Shopee, Amazon e OLX. Análise, SEO, copy e imagens melhoradas por IA.",
       },
+      { property: "og:title", content: "Anuncia.ai — Otimize anúncios de marketplaces com IA" },
+      { name: "twitter:title", content: "Anuncia.ai — Otimize anúncios de marketplaces com IA" },
+      { property: "og:description", content: "Transforme anúncios comuns em anúncios profissionais para Mercado Livre, Shopee, Amazon e OLX. Análise, SEO, copy e imagens melhoradas por IA." },
+      { name: "twitter:description", content: "Transforme anúncios comuns em anúncios profissionais para Mercado Livre, Shopee, Amazon e OLX. Análise, SEO, copy e imagens melhoradas por IA." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fca15a13-f9d3-4df3-96ea-36875e1cd324/id-preview-a5692139--55acd7a9-559d-4766-89d8-8f2abdcecb37.lovable.app-1784139402287.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fca15a13-f9d3-4df3-96ea-36875e1cd324/id-preview-a5692139--55acd7a9-559d-4766-89d8-8f2abdcecb37.lovable.app-1784139402287.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,

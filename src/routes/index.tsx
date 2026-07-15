@@ -20,11 +20,11 @@ export const Route = createFileRoute("/")({
         content:
           "Transforme anúncios comuns em anúncios profissionais para Mercado Livre, Shopee, Amazon e OLX. Análise, SEO, copy e imagens melhoradas por IA.",
       },
-      { property: "og:title", content: "Anuncia.ai — Anúncios profissionais com IA" },
+      { property: "og:title", content: "Anuncia.ai — Otimize anúncios de marketplaces com IA" },
       {
         property: "og:description",
         content:
-          "Score, título, descrição, bullets, palavras-chave e imagens melhoradas. Tudo automatizado.",
+          "Transforme anúncios comuns em anúncios profissionais para Mercado Livre, Shopee, Amazon e OLX. Análise, SEO, copy e imagens melhoradas por IA.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
