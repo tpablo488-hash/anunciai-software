@@ -48,8 +48,6 @@ export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
     [value, onChange],
   );
 
-  const canSubmit = value.product.trim() && value.category.trim() && value.marketplace;
-
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
       <div className="space-y-4">
