@@ -1,76 +1,85 @@
-// Prompts profissionais para análise, SEO e geração de imagens.
-// Mantidos em módulo separado para fácil ajuste sem tocar na lógica.
+// Prompts para Análise de Anúncio e Geração de Novo Anúncio.
 
 export const MARKETPLACE_GUIDE: Record<string, string> = {
   mercadolivre:
-    "Mercado Livre: títulos de até 60 caracteres, começando por Marca + Modelo + Atributos-chave. Prioriza palavras exatas de busca, sem caixa alta exagerada nem emojis. Descrição valoriza escaneabilidade, especificações técnicas e garantia.",
+    "Mercado Livre: títulos de até 60 caracteres, Marca + Modelo + Atributos-chave, palavras exatas de busca, sem caixa alta nem emojis.",
   shopee:
-    "Shopee: títulos podem ter até 100 caracteres, aceitam variações e sinônimos, funcionam bem com bullets e chamada emocional. Público mais impulsivo — CTA e benefícios claros aumentam conversão.",
+    "Shopee: títulos até 100 caracteres, aceitam sinônimos e CTA emocional; bullets funcionam bem.",
   amazon:
-    "Amazon: título até 200 caracteres, formato Marca + Linha + Recurso + Modelo + Tamanho/Cor. Bullets (5) são fundamentais, focados em benefícios. Descrição técnica, sem promessas.",
-  olx: "OLX: título direto, sem repetição de palavras, foco em modelo, estado e localização. Descrição objetiva, com condição do produto, motivo da venda e forma de entrega.",
+    "Amazon: título até 200 caracteres, Marca + Linha + Recurso + Modelo + Tamanho/Cor; 5 bullets focados em benefícios.",
+  olx: "OLX: título direto, sem repetição, foco em modelo/estado/localização; descrição objetiva.",
   outro:
-    "Site próprio / marketplace genérico: título claro e otimizado para SEO Google (marca + produto + atributo). Descrição longa com estrutura AIDA e schema-friendly.",
+    "Site próprio/genérico: título otimizado para SEO Google (marca + produto + atributo); descrição AIDA.",
 };
 
-export function buildAnalysisPrompt(input: {
+interface AdBase {
   product: string;
   category: string;
   marketplace: string;
   title: string;
   description: string;
   imagesCount: number;
-}) {
+}
+
+export function buildAnalysisPrompt(input: AdBase) {
   const guide = MARKETPLACE_GUIDE[input.marketplace] ?? MARKETPLACE_GUIDE.outro;
+  return `Você é um especialista sênior em SEO para marketplaces e copywriting de e-commerce.
 
-  return `Você é um especialista sênior em SEO para marketplaces e copywriter de e-commerce com 10+ anos de experiência em Mercado Livre, Shopee, Amazon e OLX. Você domina AIDA, PAS, técnicas de persuasão, hierarquia de informação e escaneabilidade.
-
-MARKETPLACE ALVO: ${input.marketplace}
-DIRETRIZES DA PLATAFORMA:
-${guide}
+MARKETPLACE: ${input.marketplace}
+DIRETRIZ: ${guide}
 
 DADOS DO ANÚNCIO:
 - Produto: ${input.product}
 - Categoria: ${input.category}
-- Título atual: ${input.title}
-- Descrição atual: ${input.description}
+- Título atual: ${input.title || "(vazio)"}
+- Descrição atual: ${input.description || "(vazio)"}
 - Imagens fornecidas: ${input.imagesCount}
 
-TAREFA:
-1) Analise texto E imagens (quando fornecidas).
-2) Nunca invente especificações técnicas — se não estiver claro, escreva de forma genérica.
-3) Aplique boas práticas do marketplace informado.
-4) Retorne EXCLUSIVAMENTE um JSON válido no schema abaixo (sem markdown, sem comentários).
+TAREFA: Analise o anúncio (texto e imagens quando houver) e retorne EXCLUSIVAMENTE um JSON válido no schema:
 
-SCHEMA JSON:
 {
-  "scoreGeral": number (0-100),
-  "scores": {
-    "seo": number, "fotos": number, "titulo": number,
-    "descricao": number, "persuasao": number,
-    "conversao": number, "escaneabilidade": number
-  },
-  "comentarios": {
-    "seo": string, "fotos": string, "titulo": string,
-    "descricao": string, "persuasao": string,
-    "conversao": string, "escaneabilidade": string
-  },
-  "problemas": string[] (5 a 8 itens, curtos e diretos),
-  "titulos": string[] (exatamente 5 títulos otimizados, respeitando o limite do marketplace),
-  "descricao": string (descrição completa profissional, com quebras \\n\\n, contendo: Introdução, Benefícios, Características, Especificações, Diferenciais, Garantia, CTA),
-  "bullets": string[] (entre 5 e 10 bullets, começando com benefício antes de característica quando possível),
-  "palavrasChave": string[] (10-20 keywords ordenadas por relevância de busca),
-  "sugestoes": string[] (5-8 melhorias acionáveis para aumentar conversão),
-  "promptImagem": string (prompt EM INGLÊS extremamente detalhado para editor de imagem IA — ver instruções abaixo)
+  "tituloAnalise": string (análise crítica do título atual, 2-4 frases),
+  "descricaoAnalise": string (análise crítica da descrição atual, 3-5 frases),
+  "seo": string (avaliação de SEO no marketplace, 3-5 frases),
+  "palavrasChave": string[] (10-15 keywords relevantes que o anúncio deveria conter),
+  "pontosFortes": string[] (3-6 itens),
+  "pontosFracos": string[] (3-6 itens),
+  "sugestoes": string[] (5-8 melhorias acionáveis)
 }
 
-INSTRUÇÕES PARA "promptImagem":
-- Escreva em inglês, altamente descritivo.
-- Peça: professional commercial product photography, studio lighting, clean white background OR premium studio backdrop, ultra-sharp focus, realistic color, high resolution, e-commerce ready.
-- Enfatize: PRESERVE the original product exactly — do NOT alter brand, model, shape, logos, text, colors or physical characteristics.
-- Peça: remove distracting background, correct exposure, boost clarity, subtle shadow for depth.
-- Nunca peça para adicionar textos, selos, badges ou marcas d'água.
-- 2 a 4 frases, denso e técnico.
-
-Responda APENAS com o JSON.`;
+Não invente especificações. Responda APENAS com o JSON, sem markdown.`;
 }
+
+export function buildGeneratePrompt(input: AdBase) {
+  const guide = MARKETPLACE_GUIDE[input.marketplace] ?? MARKETPLACE_GUIDE.outro;
+  return `Você é copywriter sênior de e-commerce e especialista em SEO de marketplaces.
+
+MARKETPLACE: ${input.marketplace}
+DIRETRIZ: ${guide}
+
+DADOS DE ENTRADA:
+- Produto: ${input.product}
+- Categoria: ${input.category}
+- Título atual: ${input.title || "(vazio)"}
+- Descrição atual: ${input.description || "(vazio)"}
+- Imagens fornecidas: ${input.imagesCount}
+
+TAREFA: Gere um NOVO anúncio otimizado. Retorne EXCLUSIVAMENTE um JSON válido:
+
+{
+  "titulo": string (título otimizado respeitando limite do marketplace),
+  "descricao": string (descrição profissional completa com quebras \\n\\n: Introdução, Benefícios, Características, Especificações, Diferenciais, Garantia, CTA),
+  "seo": string (explicação da estratégia de SEO aplicada, 3-5 frases),
+  "bullets": string[] (exatamente 5 bullets, benefício + característica),
+  "palavrasChave": string[] (exatamente 10 keywords ordenadas por relevância)
+}
+
+Não invente especificações técnicas. Responda APENAS com o JSON, sem markdown.`;
+}
+
+export function buildImagePrompt(input: { product: string; title: string; description: string }) {
+  return `Professional commercial product photography of: ${input.product}. ${input.title}. ${input.description.slice(0, 400)}.
+Studio lighting, clean white background, ultra-sharp focus, realistic color, high resolution, e-commerce ready, subtle shadow for depth. No text, no watermark, no badges.`;
+}
+
+export const IMAGE_ENHANCE_PROMPT = `Enhance this product photo for e-commerce: professional commercial product photography, studio lighting, clean white background, ultra-sharp focus, realistic color, high resolution, subtle shadow for depth. PRESERVE the original product exactly — do NOT alter brand, model, shape, logos, text, colors or physical characteristics. Remove distracting background, correct exposure, boost clarity. No added text, badges or watermarks.`;
