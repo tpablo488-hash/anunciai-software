@@ -90,7 +90,7 @@ export function UploadPanel({ value, onChange, onAnalyze, loading, actionLabel =
           disabled={loading}
           onClick={onAnalyze}
         >
-          {loading ? "Analisando com IA..." : "Analisar anúncio"}
+          {loading ? loadingLabel : actionLabel}
         </Button>
       </div>
 
