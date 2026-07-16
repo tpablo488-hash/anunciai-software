@@ -29,7 +29,7 @@ interface Props {
   loadingLabel?: string;
 }
 
-export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
+export function UploadPanel({ value, onChange, onAnalyze, loading, actionLabel = "Analisar anúncio", loadingLabel = "Analisando com IA..." }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback(
