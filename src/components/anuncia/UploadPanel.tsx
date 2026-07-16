@@ -25,9 +25,11 @@ interface Props {
   onChange: (v: AdInput) => void;
   onAnalyze: () => void;
   loading: boolean;
+  actionLabel?: string;
+  loadingLabel?: string;
 }
 
-export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
+export function UploadPanel({ value, onChange, onAnalyze, loading, actionLabel = "Analisar anúncio", loadingLabel = "Analisando com IA..." }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback(
@@ -88,7 +90,7 @@ export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
           disabled={loading}
           onClick={onAnalyze}
         >
-          {loading ? "Analisando com IA..." : "Analisar anúncio"}
+          {loading ? loadingLabel : actionLabel}
         </Button>
       </div>
 
