@@ -25,6 +25,8 @@ interface Props {
   onChange: (v: AdInput) => void;
   onAnalyze: () => void;
   loading: boolean;
+  actionLabel?: string;
+  loadingLabel?: string;
 }
 
 export function UploadPanel({ value, onChange, onAnalyze, loading }: Props) {
