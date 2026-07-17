@@ -62,13 +62,28 @@ function extractJson(text: string): unknown {
 }
 
 function humanizeError(status: number, body: string): Error {
+  // Tenta extrair a mensagem original da API do Google (formato: { error: { message, status } })
+  let original = body;
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string; status?: string } };
+    if (parsed?.error?.message) {
+      original = parsed.error.status
+        ? `${parsed.error.status}: ${parsed.error.message}`
+        : parsed.error.message;
+    }
+  } catch {
+    /* body não é JSON, mantém texto bruto */
+  }
+  original = original.slice(0, 600);
+
   if (status === 429)
-    return new Error("Muitas requisições. Aguarde alguns segundos e tente novamente.");
-  if (status === 402)
-    return new Error("Créditos esgotados. Adicione créditos ou configure GEMINI_API_KEY.");
+    return new Error(
+      `Quota do Gemini atingida (429). Mensagem original da API: ${original}. ` +
+        `Verifique limites em https://aistudio.google.com/app/apikey (free tier tem quota baixa em gemini-2.0-flash e gemini-2.5-flash-image-preview).`,
+    );
   if (status === 401 || status === 403)
-    return new Error("Chave de API inválida. Verifique GEMINI_API_KEY ou LOVABLE_API_KEY.");
-  return new Error(`Erro na IA (${status}): ${body.slice(0, 300)}`);
+    return new Error(`Chave GEMINI_API_KEY inválida ou sem permissão (${status}). API: ${original}`);
+  return new Error(`Erro na API Gemini (${status}): ${original}`);
 }
 
 function missingKeyError(): Error {
