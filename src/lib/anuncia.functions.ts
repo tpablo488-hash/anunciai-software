@@ -7,9 +7,23 @@ import {
   IMAGE_ENHANCE_PROMPT,
 } from "./anuncia-prompts";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const TEXT_MODEL = "google/gemini-3-flash-preview";
-const IMAGE_MODEL = "google/gemini-2.5-flash-image"; // Nano Banana
+// ---------------------------------------------------------------------------
+// Duas rotas de IA:
+//   1) GEMINI_API_KEY (Google AI Studio) -> chamada direta à API oficial do Google.
+//      Funciona em qualquer hospedagem (Vercel, Netlify, self-host a partir do GitHub).
+//   2) LOVABLE_API_KEY -> Lovable AI Gateway. Provisionada automaticamente dentro
+//      do ambiente Lovable (preview + *.lovable.app). NÃO existe fora do Lovable.
+//
+// Preferimos GEMINI_API_KEY quando presente para que o app funcione self-hosted.
+// ---------------------------------------------------------------------------
+
+const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const LOVABLE_TEXT_MODEL = "google/gemini-3-flash-preview";
+const LOVABLE_IMAGE_MODEL = "google/gemini-2.5-flash-image"; // Nano Banana via Lovable
+
+const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GOOGLE_TEXT_MODEL = "gemini-2.0-flash";
+const GOOGLE_IMAGE_MODEL = "gemini-2.5-flash-image-preview"; // Nano Banana direto
 
 const AdInputSchema = z.object({
   product: z.string().min(1),
@@ -51,19 +65,103 @@ function humanizeError(status: number, body: string): Error {
   if (status === 429)
     return new Error("Muitas requisições. Aguarde alguns segundos e tente novamente.");
   if (status === 402)
-    return new Error("Créditos do Lovable AI esgotados. Adicione créditos no workspace.");
+    return new Error("Créditos esgotados. Adicione créditos ou configure GEMINI_API_KEY.");
+  if (status === 401 || status === 403)
+    return new Error("Chave de API inválida. Verifique GEMINI_API_KEY ou LOVABLE_API_KEY.");
   return new Error(`Erro na IA (${status}): ${body.slice(0, 300)}`);
 }
 
-async function callGeminiText(key: string, prompt: string, images: string[]): Promise<string> {
+function missingKeyError(): Error {
+  return new Error(
+    "Nenhuma chave de IA configurada. Defina GEMINI_API_KEY (Google AI Studio) nas variáveis de ambiente do servidor.",
+  );
+}
+
+/** Converte data:image/xxx;base64,yyyy -> { mimeType, data } */
+function splitDataUrl(dataUrl: string): { mimeType: string; data: string } {
+  const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) throw new Error("Imagem inválida (esperado data URL base64).");
+  return { mimeType: m[1], data: m[2] };
+}
+
+// ---------- GOOGLE DIRETO ----------
+
+async function googleGenerateText(
+  key: string,
+  prompt: string,
+  images: string[],
+  jsonMode: boolean,
+): Promise<string> {
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
+  for (const img of images) {
+    const { mimeType, data } = splitDataUrl(img);
+    parts.push({ inline_data: { mime_type: mimeType, data } });
+  }
+  const body: Record<string, unknown> = {
+    contents: [{ role: "user", parts }],
+  };
+  if (jsonMode) {
+    body.generationConfig = { responseMimeType: "application/json" };
+  }
+  const url = `${GOOGLE_BASE}/${GOOGLE_TEXT_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw humanizeError(res.status, await res.text());
+  const json = (await res.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  if (!text) throw new Error("Gemini não retornou texto.");
+  return text;
+}
+
+async function googleGenerateImage(
+  key: string,
+  prompt: string,
+  inputImage?: string,
+): Promise<string> {
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
+  if (inputImage) {
+    const { mimeType, data } = splitDataUrl(inputImage);
+    parts.push({ inline_data: { mime_type: mimeType, data } });
+  }
+  const url = `${GOOGLE_BASE}/${GOOGLE_IMAGE_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts }],
+      generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+    }),
+  });
+  if (!res.ok) throw humanizeError(res.status, await res.text());
+  const json = (await res.json()) as {
+    candidates?: Array<{
+      content?: { parts?: Array<{ inline_data?: { mime_type: string; data: string } }> };
+    }>;
+  };
+  const img = json.candidates?.[0]?.content?.parts?.find((p) => p.inline_data)?.inline_data;
+  if (!img) throw new Error("Gemini (Nano Banana) não retornou imagem.");
+  return `data:${img.mime_type};base64,${img.data}`;
+}
+
+// ---------- LOVABLE GATEWAY ----------
+
+async function lovableGenerateText(
+  key: string,
+  prompt: string,
+  images: string[],
+): Promise<string> {
   const content: Array<Record<string, unknown>> = [{ type: "text", text: prompt }];
   for (const img of images) content.push({ type: "image_url", image_url: { url: img } });
-
-  const res = await fetch(GATEWAY_URL, {
+  const res = await fetch(LOVABLE_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: TEXT_MODEL,
+      model: LOVABLE_TEXT_MODEL,
       messages: [{ role: "user", content }],
       response_format: { type: "json_object" },
     }),
@@ -73,11 +171,54 @@ async function callGeminiText(key: string, prompt: string, images: string[]): Pr
   return json.choices?.[0]?.message?.content ?? "";
 }
 
+async function lovableGenerateImage(
+  key: string,
+  prompt: string,
+  inputImage?: string,
+): Promise<string> {
+  const content: Array<Record<string, unknown>> = [{ type: "text", text: prompt }];
+  if (inputImage) content.push({ type: "image_url", image_url: { url: inputImage } });
+  const res = await fetch(LOVABLE_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: LOVABLE_IMAGE_MODEL,
+      modalities: ["image", "text"],
+      messages: [{ role: "user", content }],
+    }),
+  });
+  if (!res.ok) throw humanizeError(res.status, await res.text());
+  const json = (await res.json()) as {
+    choices: Array<{ message: { images?: Array<{ image_url: { url: string } }> } }>;
+  };
+  const url = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+  if (!url) throw new Error("Nano Banana não retornou imagem.");
+  return url;
+}
+
+// ---------- ROTEADORES ----------
+
+async function aiText(prompt: string, images: string[]): Promise<string> {
+  const gemini = process.env.GEMINI_API_KEY;
+  if (gemini) return googleGenerateText(gemini, prompt, images, true);
+  const lovable = process.env.LOVABLE_API_KEY;
+  if (lovable) return lovableGenerateText(lovable, prompt, images);
+  throw missingKeyError();
+}
+
+async function aiImage(prompt: string, inputImage?: string): Promise<string> {
+  const gemini = process.env.GEMINI_API_KEY;
+  if (gemini) return googleGenerateImage(gemini, prompt, inputImage);
+  const lovable = process.env.LOVABLE_API_KEY;
+  if (lovable) return lovableGenerateImage(lovable, prompt, inputImage);
+  throw missingKeyError();
+}
+
+// ---------- SERVER FUNCTIONS ----------
+
 export const analyzeAd = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => AdInputSchema.parse(v))
   .handler(async ({ data }): Promise<AnalyzeResult> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("LOVABLE_API_KEY ausente no servidor.");
     const prompt = buildAnalysisPrompt({
       product: data.product,
       category: data.category,
@@ -86,15 +227,13 @@ export const analyzeAd = createServerFn({ method: "POST" })
       description: data.description,
       imagesCount: data.images.length,
     });
-    const text = await callGeminiText(key, prompt, data.images);
+    const text = await aiText(prompt, data.images);
     return extractJson(text) as AnalyzeResult;
   });
 
 export const generateAd = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => AdInputSchema.parse(v))
   .handler(async ({ data }): Promise<GenerateResult> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("LOVABLE_API_KEY ausente no servidor.");
     const prompt = buildGeneratePrompt({
       product: data.product,
       category: data.category,
@@ -103,7 +242,7 @@ export const generateAd = createServerFn({ method: "POST" })
       description: data.description,
       imagesCount: data.images.length,
     });
-    const text = await callGeminiText(key, prompt, data.images);
+    const text = await aiText(prompt, data.images);
     return extractJson(text) as GenerateResult;
   });
 
@@ -112,32 +251,8 @@ const EnhanceInput = z.object({ image: z.string().min(10) });
 export const enhanceImage = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => EnhanceInput.parse(v))
   .handler(async ({ data }): Promise<{ image: string }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("LOVABLE_API_KEY ausente no servidor.");
-    const res = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: IMAGE_MODEL,
-        modalities: ["image", "text"],
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: IMAGE_ENHANCE_PROMPT },
-              { type: "image_url", image_url: { url: data.image } },
-            ],
-          },
-        ],
-      }),
-    });
-    if (!res.ok) throw humanizeError(res.status, await res.text());
-    const json = (await res.json()) as {
-      choices: Array<{ message: { images?: Array<{ image_url: { url: string } }> } }>;
-    };
-    const url = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!url) throw new Error("Nano Banana não retornou imagem.");
-    return { image: url };
+    const image = await aiImage(IMAGE_ENHANCE_PROMPT, data.image);
+    return { image };
   });
 
 const GenImgInput = z.object({
@@ -149,23 +264,7 @@ const GenImgInput = z.object({
 export const generateProductImage = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => GenImgInput.parse(v))
   .handler(async ({ data }): Promise<{ image: string }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("LOVABLE_API_KEY ausente no servidor.");
     const prompt = buildImagePrompt(data);
-    const res = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: IMAGE_MODEL,
-        modalities: ["image", "text"],
-        messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
-      }),
-    });
-    if (!res.ok) throw humanizeError(res.status, await res.text());
-    const json = (await res.json()) as {
-      choices: Array<{ message: { images?: Array<{ image_url: { url: string } }> } }>;
-    };
-    const url = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!url) throw new Error("Nano Banana não retornou imagem.");
-    return { image: url };
+    const image = await aiImage(prompt);
+    return { image };
   });
