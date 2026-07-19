@@ -221,20 +221,6 @@ async function aiImage(prompt: string, inputImage?: string): Promise<string> {
 
 // ---------- SERVER FUNCTIONS ----------
 
-export const analyzeAd = createServerFn({ method: "POST" })
-  .inputValidator((v: unknown) => AdInputSchema.parse(v))
-  .handler(async ({ data }): Promise<AnalyzeResult> => {
-    const prompt = buildAnalysisPrompt({
-      product: data.product,
-      category: data.category,
-      marketplace: data.marketplace,
-      title: data.title,
-      description: data.description,
-      imagesCount: data.images.length,
-    });
-    const text = await aiText(prompt, data.images);
-    return extractJson(text) as AnalyzeResult;
-  });
 
 export const generateAd = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => AdInputSchema.parse(v))
