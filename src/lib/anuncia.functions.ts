@@ -33,15 +33,6 @@ const AdInputSchema = z.object({
   images: z.array(z.string()).max(10).default([]),
 });
 
-export type AnalyzeResult = {
-  tituloAnalise: string;
-  descricaoAnalise: string;
-  seo: string;
-  palavrasChave: string[];
-  pontosFortes: string[];
-  pontosFracos: string[];
-  sugestoes: string[];
-};
 
 export type GenerateResult = {
   titulo: string;
