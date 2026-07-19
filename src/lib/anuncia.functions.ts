@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
-  buildAnalysisPrompt,
   buildGeneratePrompt,
   buildImagePrompt,
   IMAGE_ENHANCE_PROMPT,
