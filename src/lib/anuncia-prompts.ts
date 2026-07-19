@@ -21,34 +21,6 @@ interface AdBase {
   imagesCount: number;
 }
 
-export function buildAnalysisPrompt(input: AdBase) {
-  const guide = MARKETPLACE_GUIDE[input.marketplace] ?? MARKETPLACE_GUIDE.outro;
-  return `Você é um especialista sênior em SEO para marketplaces e copywriting de e-commerce.
-
-MARKETPLACE: ${input.marketplace}
-DIRETRIZ: ${guide}
-
-DADOS DO ANÚNCIO:
-- Produto: ${input.product}
-- Categoria: ${input.category}
-- Título atual: ${input.title || "(vazio)"}
-- Descrição atual: ${input.description || "(vazio)"}
-- Imagens fornecidas: ${input.imagesCount}
-
-TAREFA: Analise o anúncio (texto e imagens quando houver) e retorne EXCLUSIVAMENTE um JSON válido no schema:
-
-{
-  "tituloAnalise": string (análise crítica do título atual, 2-4 frases),
-  "descricaoAnalise": string (análise crítica da descrição atual, 3-5 frases),
-  "seo": string (avaliação de SEO no marketplace, 3-5 frases),
-  "palavrasChave": string[] (10-15 keywords relevantes que o anúncio deveria conter),
-  "pontosFortes": string[] (3-6 itens),
-  "pontosFracos": string[] (3-6 itens),
-  "sugestoes": string[] (5-8 melhorias acionáveis)
-}
-
-Não invente especificações. Responda APENAS com o JSON, sem markdown.`;
-}
 
 export function buildGeneratePrompt(input: AdBase) {
   const guide = MARKETPLACE_GUIDE[input.marketplace] ?? MARKETPLACE_GUIDE.outro;
